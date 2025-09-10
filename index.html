@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محاسبه اقساط موبایل فرهنگیان</title>
+<style>
+body { font-family: Tahoma, sans-serif; direction: rtl; margin:0; padding:0; background:#f0f4f7;}
+.container { max-width:600px; width:95%; margin:30px auto; padding:20px; background:#fff; border-radius:15px; box-shadow:0 6px 18px rgba(0,0,0,0.12);}
+h1 { text-align:center; color:#00796b; margin-bottom:25px;}
+label { display:block; font-weight:bold; margin:12px 0 5px;}
+input, select, button { width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; font-size:16px; box-sizing:border-box;}
+input:focus, select:focus { outline:none; border-color:#00796b; box-shadow:0 0 5px rgba(0,121,107,0.3);}
+button { background:#00796b; color:white; border:none; font-weight:bold; cursor:pointer; transition:0.3s;}
+button:hover { background:#005f50;}
+.history, .report { margin-top:20px; display:none; }
+table { width:100%; border-collapse:collapse; margin-top:10px;}
+th, td { padding:10px; text-align:center; border-bottom:1px solid #ddd;}
+th { background:#00796b; color:white;}
+.footer { text-align:center; margin-top:20px; font-size:14px; color:#555;}
+#searchInput { margin-bottom:10px; padding:10px; font-size:16px; border-radius:8px; border:1px solid #ccc;}
+@media(max-width:480px){ h1{font-size:22px;} input,select,button{font-size:15px; padding:10px;} }
+</style>
+</head>
+<body>
+
+<div class="container" id="loginContainer">
+<h1>ورود</h1>
+<label>نام کاربری:</label>
+<input type="text" id="username" placeholder="نام کاربری">
+<label>رمز عبور:</label>
+<input type="password" id="password" placeholder="رمز عبور">
+<button onclick="login()">ورود</button>
+</div>
+
+<div class="container" id="appContainer" style="display:none;">
+<h1>محاسبه اقساط موبایل فرهنگیان</h1>
+<form id="purchaseForm">
+    <label>نام خریدار:</label>
+    <input type="text" id="buyer" placeholder="نام خریدار" required>
+
+    <label>نام گوشی:</label>
+    <input type="text" id="phone" placeholder="مثلاً سامسونگ Galaxy A54" required>
+
+    <label>نام ضامن:</label>
+    <input type="text" id="guarantor" placeholder="نام ضامن" required>
+
+    <label>تاریخ خرید:</label>
+    <input type="date" id="date" required>
+
+    <label>قیمت اولیه (تومان):</label>
+    <input type="number" id="m2" placeholder="مثلاً 20000000" required>
+
+    <label>مبلغ پیش قسط (تومان):</label>
+    <input type="number" id="pi" placeholder="مثلاً 5000000" required>
+
+    <label>تعداد اقساط:</label>
+    <select id="m">
+        <option value="5">۵ ماهه</option>
+        <option value="6" selected>۶ ماهه</option>
+        <option value="7">۷ ماهه</option>
+        <option value="8">۸ ماهه</option>
+    </select>
+
+    <button type="button" onclick="saveData()">سیو</button>
+    <button type="button" onclick="toggleHistory()">تاریخچه</button>
+    <button type="button" onclick="toggleReport()">گزارش ماهانه</button>
+</form>
+
+<div class="history" id="historyContainer">
+    <h2>تاریخچه خریدها</h2>
+    <input type="text" id="searchInput" placeholder="جستجو بر اساس نام..." onkeyup="filterHistory()">
+    <table>
+        <thead>
+            <tr>
+                <th>نام خریدار</th>
+                <th>نام گوشی</th>
+                <th>نام ضامن</th>
+                <th>تاریخ خرید</th>
+                <th>مبلغ هر قسط</th>
+                <th>جمع کل پرداخت</th>
+                <th>سود</th>
+            </tr>
+        </thead>
+        <tbody id="historyBody">
+            <tr><td colspan="7" style="text-align:center;">تاریخچه خالی است</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="report" id="reportContainer">
+    <h2>گزارش ماهانه</h2>
+    <canvas id="reportChart" width="400" height="200"></canvas>
+</div>
+
+<div class="footer">AK STUDIO</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
+<script>
+// ورود
+function login(){
+    const u=document.getElementById("username").value.trim();
+    const p=document.getElementById("password").value.trim();
+    if(u==="09151336810" && p==="1234"){
+        document.getElementById("loginContainer").style.display="none";
+        document.getElementById("appContainer").style.display="block";
+        loadHistory();
+    }else{
+        alert("نام کاربری یا رمز عبور اشتباه است!");
+    }
+}
+
+// محاسبه
+function calculate(m2,pi,m){
+    let a=((m2*0.05)+m2)-pi;
+    let b=((a*(m*0.03))+a)/m;
+    let total=pi+b*m;
+    let profit=total-m2;
+    return {b,total,profit};
+}
+
+// تاریخ شمسی
+function toJalali(dateStr){
+    if(!dateStr) return '';
+    const [y,m,d]=dateStr.split("-").map(Number);
+    const pDate=new persianDate([y,m,d]);
+    return pDate.format('YYYY/MM/DD');
+}
+
+// ذخیره
+function saveData(){
+    const buyer=document.getElementById("buyer").value.trim();
+    const phone=document.getElementById("phone").value.trim();
+    const guarantor=document.getElementById("guarantor").value.trim();
+    const date=document.getElementById("date").value;
+    const m2=parseInt(document.getElementById("m2").value);
+    const pi=parseInt(document.getElementById("pi").value);
+    const m=parseInt(document.getElementById("m").value);
+
+    if(!buyer||!phone||!guarantor||!date||!m2||!pi){ alert("لطفا همه فیلدها را پر کنید!"); return;}
+
+    const calc=calculate(m2,pi,m);
+    const purchase={buyer,phone,guarantor,date:toJalali(date),monthly:calc.b,total:calc.total,profit:calc.profit};
+
+    let history=JSON.parse(localStorage.getItem("purchaseHistory"))||[];
+    history.push(purchase);
+    localStorage.setItem("purchaseHistory",JSON.stringify(history));
+
+    alert("اطلاعات با موفقیت ذخیره شد!");
+    document.getElementById("purchaseForm").reset();
+    loadHistory();
+}
+
+// بارگذاری تاریخچه
+function loadHistory(){
+    const history=JSON.parse(localStorage.getItem("purchaseHistory"))||[];
+    const tbody=document.getElementById("historyBody");
+    tbody.innerHTML="";
+    if(history.length===0){
+        tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;">تاریخچه خالی است</td></tr>`;
+        return;
+    }
+    history.forEach(item=>{
+        const monthly=(item.monthly&& !isNaN(item.monthly))?item.monthly:0;
+        const total=(item.total && !isNaN(item.total))?item.total:0;
+        const profit=(item.profit && !isNaN(item.profit))?item.profit:0;
+        tbody.innerHTML+=`<tr>
+            <td>${item.buyer||''}</td>
+            <td>${item.phone||''}</td>
+            <td>${item.guarantor||''}</td>
+            <td>${item.date||''}</td>
+            <td>${monthly.toFixed(0).toLocaleString()}</td>
+            <td>${total.toFixed(0).toLocaleString()}</td>
+            <td>${profit.toFixed(0).toLocaleString()}</td>
+        </tr>`;
+    });
+}
+
+// نمایش/مخفی کردن تاریخچه
+function toggleHistory(){
+    const c=document.getElementById("historyContainer");
+    loadHistory();
+    c.style.display=(c.style.display==="none"||c.style.display==="")?"block":"none";
+}
+
+// جستجو
+function filterHistory(){
+    const val=document.getElementById("searchInput").value.toLowerCase();
+    document.querySelectorAll("#historyBody tr").forEach(row=>{
+        row.style.display=row.innerText.toLowerCase().includes(val)?"":"none";
+    });
+}
+
+// گزارش ماهانه
+function toggleReport(){
+    const container=document.getElementById("reportContainer");
+    container.style.display=(container.style.display==="none"||container.style.display==="")?"block":"none";
+    generateReport();
+}
+
+function generateReport(){
+    const history=JSON.parse(localStorage.getItem("purchaseHistory"))||[];
+    const monthlyData={};
+    history.forEach(item=>{
+        const parts=item.date ? item.date.split("/") : ["0000","00"];
+        const key=`${parts[0]}/${parts[1]}`;
+        if(!monthlyData[key]) monthlyData[key]=0;
+        monthlyData[key]+=item.total ? item.total : 0;
+    });
+    const labels=Object.keys(monthlyData);
+    const data=Object.values(monthlyData);
+
+    const ctx=document.getElementById("reportChart").getContext("2d");
+    if(window.reportChart instanceof Chart){ window.reportChart.destroy(); }
+    window.reportChart=new Chart(ctx,{
+        type:'bar',
+        data:{labels:labels,datasets:[{label:'جمع کل پرداخت‌ها (تومان)', data:data, backgroundColor:'#00796b'}]},
+        options:{responsive:true,plugins:{legend:{display:false}}}
+    });
+}
+
+window.onload=function(){
+    document.getElementById("appContainer").style.display="none";
+}
+</script>
+
+</body>
+</html>
