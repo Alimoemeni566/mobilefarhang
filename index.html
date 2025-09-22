@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محاسبه اقساط موبایل</title>
+<style>
+  /* فونت و تنظیمات کلی */
+  @font-face {
+    font-family: 'Vazirmatn';
+    src: url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.0.3/fonts/webfonts/Vazirmatn-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Vazirmatn';
+    src: url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.0.3/fonts/webfonts/Vazirmatn-Bold.woff2') format('woff2');
+    font-weight: bold;
+    font-style: normal;
+  }
+
+  /* تم سفید (Neumorphism) */
+  body {
+    font-family: 'Vazirmatn', sans-serif;
+    direction: rtl;
+    margin: 0;
+    padding: 0;
+    /* رنگ زمینه اصلی - سفید مایل به خاکستری روشن */
+    background: #f0f2f5; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #36454F; /* رنگ متن اصلی */
+  }
+  .container {
+    max-width: 450px;
+    width: 95%;
+    padding: 35px;
+    background: #f0f2f5; /* همرنگ بدنه برای افکت نئومورفیسم */
+    border-radius: 25px;
+    /* سایه خارجی: ترکیب سایه روشن و سایه تیره برای عمق */
+    box-shadow: 10px 10px 30px rgba(174, 174, 192, 0.4), 
+                -10px -10px 30px #ffffff;
+    text-align: center;
+  }
+  h1 {
+    color: #2c3e50; /* آبی تیره شیک */
+    margin-bottom: 30px;
+    font-size: 28px;
+    font-weight: bold;
+  }
+  label {
+    display: block;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    text-align: right;
+    color: #555;
+    font-size: 16px;
+  }
+  input, select {
+    width: 100%;
+    padding: 16px;
+    margin-bottom: 20px;
+    border: none; /* حذف حاشیه */
+    border-radius: 15px;
+    font-size: 17px;
+    box-sizing: border-box;
+    background-color: #f0f2f5;
+    color: #36454F;
+    /* سایه داخلی برای فرورفتگی */
+    box-shadow: inset 5px 5px 10px rgba(174, 174, 192, 0.3), 
+                inset -5px -5px 10px #ffffff;
+    transition: all 0.3s ease;
+  }
+  input:focus, select:focus {
+    outline: none;
+    /* تاکید با تغییر سایه داخلی هنگام فوکوس */
+    box-shadow: inset 2px 2px 5px rgba(174, 174, 192, 0.6), 
+                inset -2px -2px 5px #ffffff;
+  }
+  button {
+    width: 100%;
+    padding: 18px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-weight: bold;
+    font-size: 19px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    /* سایه برجسته برای دکمه */
+    box-shadow: 6px 6px 15px rgba(174, 174, 192, 0.5), 
+                -6px -6px 15px #ffffff;
+    letter-spacing: 1px;
+  }
+  button:hover {
+    background: #34495e;
+    transform: translateY(-2px);
+    /* سایه قوی‌تر هنگام هاور */
+    box-shadow: 8px 8px 20px rgba(174, 174, 192, 0.6), 
+                -8px -8px 20px #ffffff;
+  }
+  button:active {
+    /* افکت فشردن دکمه (تبدیل به حالت فرورفته) */
+    box-shadow: inset 4px 4px 10px rgba(0, 0, 0, 0.2), 
+                inset -4px -4px 10px #ffffff;
+    transform: translateY(0);
+  }
+  .result {
+    margin-top: 35px;
+    padding: 25px;
+    background-color: #e0e5ec;
+    border-radius: 20px;
+    display: none;
+    text-align: right;
+    /* سایه داخلی کم‌رنگ برای کادر نتیجه */
+    box-shadow: inset 3px 3px 7px rgba(174, 174, 192, 0.3), 
+                inset -3px -3px 7px #ffffff;
+  }
+  .result p {
+    margin: 14px 0;
+    font-size: 18px;
+    line-height: 1.8;
+  }
+  .result p strong {
+    color: #2980b9; /* آبی فیروزه‌ای جذاب */
+    font-weight: bold;
+    font-size: 20px;
+  }
+  .footer {
+    margin-top: 25px;
+    font-size: 12px;
+    color: #7f8c8d;
+    text-align: center;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>محاسبه اقساط موبایل</h1>
+    <form id="calcForm">
+        <label for="m2">قیمت اولیه (تومان):</label>
+        <input type="number" id="m2" placeholder="مثلاً 20,000,000" required>
+
+        <label for="pi">مبلغ پیش قسط (تومان):</label>
+        <input type="number" id="pi" placeholder="مثلاً 5,000,000" required>
+
+        <label for="m">تعداد اقساط:</label>
+        <select id="m">
+            <option value="5">۵ ماهه</option>
+            <option value="6" selected>۶ ماهه</option>
+            <option value="7">۷ ماهه</option>
+            <option value="8">۸ ماهه</option>
+        </select>
+
+        <button type="button" onclick="calculateAndShow()">محاسبه</button>
+    </form>
+    
+    <div class="result" id="resultContainer">
+        <p>مبلغ هر قسط: <strong id="monthlyResult"></strong> تومان</p>
+        <p>جمع کل پرداخت: <strong id="totalResult"></strong> تومان</p>
+        <p>سود شما: <strong id="profitResult"></strong> تومان</p>
+    </div>
+    
+    <div class="footer">MAKED BY AK</div>
+</div>
+
+<script>
+// فرمول محاسبه
+function calculate(m2, pi, m){
+    let a = ((m2 * 0.05) + m2) - pi;
+    let b = ((a * (m * 0.03)) + a) / m;
+    let total = pi + b * m;
+    let profit = total - m2;
+    return { monthly: b, total: total, profit: profit };
+}
+
+// محاسبه و نمایش
+function calculateAndShow() {
+    const m2 = parseInt(document.getElementById("m2").value);
+    const pi = parseInt(document.getElementById("pi").value);
+    const m = parseInt(document.getElementById("m").value);
+
+    // بررسی پر بودن فیلدها
+    if (!m2 || !pi || !m) {
+        alert("لطفاً تمامی فیلدها را پر کنید!");
+        return;
+    }
+
+    // استفاده از فرمول اصلی
+    const result = calculate(m2, pi, m);
+
+    // نمایش نتایج در HTML
+    document.getElementById("monthlyResult").textContent = Math.round(result.monthly).toLocaleString();
+    document.getElementById("totalResult").textContent = Math.round(result.total).toLocaleString();
+    document.getElementById("profitResult").textContent = Math.round(result.profit).toLocaleString();
+    
+    // نمایش بخش نتایج
+    document.getElementById("resultContainer").style.display = "block";
+}
+</script>
+
+</body>
+</html>
